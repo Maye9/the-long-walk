@@ -1232,10 +1232,21 @@ export default function MeditationJournal() {
   const [view, setView] = useState("intro"); // intro | session | week-complete
   const [currentWeekId, setCurrentWeekId] = useState("week1");
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
-  const [entries, setEntries] = useState({});
+  const [entries, setEntries] = useState(() => {
+    try {
+      const saved = localStorage.getItem("the-long-walk-entries");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [savedIndicator, setSavedIndicator] = useState(false);
 
   const weekData = PHASES.find(p => p.id === currentWeekId);
+
+  useEffect(() => {
+    localStorage.setItem("the-long-walk-entries", JSON.stringify(entries));
+  }, [entries]);
 
   const updateJournal = (weekId, sessionIndex, data) => {
     setEntries(prev => ({
