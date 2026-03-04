@@ -1136,8 +1136,36 @@ function BrainNote({ weekId }) {
 }
 
 // ---- INTRO ----
-function Intro({ onStart, entries }) {
+function Intro({ onStart, entries, onImport }) {
   const weeks = PHASES.filter(p => p.id !== "intro");
+  const fileInputRef = useRef(null);
+
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(entries, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "the-long-walk-backup.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        onImport(data);
+      } catch {
+        alert("Couldn't read that file — make sure it's a backup from The Long Walk.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   return (
     <div className="intro-card">
       <div className="author-badge">Mayela Zambrano</div>
@@ -1164,6 +1192,15 @@ function Intro({ onStart, entries }) {
         })}
       </div>
       <button className="start-btn" onClick={() => onStart("week1")}>Begin Your Practice →</button>
+      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 16 }}>
+        <button onClick={handleExport} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer", textDecoration: "underline" }}>
+          Save backup
+        </button>
+        <button onClick={() => fileInputRef.current.click()} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer", textDecoration: "underline" }}>
+          Restore backup
+        </button>
+        <input ref={fileInputRef} type="file" accept=".json" style={{ display: "none" }} onChange={handleImport} />
+      </div>
     </div>
   );
 }
@@ -1299,7 +1336,7 @@ export default function MeditationJournal() {
   return (
     <div className="app">
       <div className="container">
-        {view === "intro" && <Intro onStart={handleStart} entries={entries} />}
+        {view === "intro" && <Intro onStart={handleStart} entries={entries} onImport={setEntries} />}
         {view === "session" && currentSession && (
           <SessionStep
             weekId={currentWeekId}
